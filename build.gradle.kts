@@ -1,4 +1,5 @@
 import org.apache.commons.lang3.SystemUtils
+import java.net.URI
 
 plugins {
     idea
@@ -45,10 +46,10 @@ loom {
         // If you don't want mixins, remove this lines
         mixinConfig("mixins.$modid.json")
     }
-    // If you don't want mixins, remove these lines
-    mixin {
-        defaultRefmapName.set("mixins.$modid.refmap.json")
-    }
+    // This breaks with mixin booter, no idea why
+    //mixin {
+    //    defaultRefmapName.set("mixins.$modid.refmap.json")
+    //}
 }
 
 sourceSets.main {
@@ -62,6 +63,19 @@ repositories {
     maven("https://repo.spongepowered.org/maven/")
     // If you don't want to log in with your real minecraft account, remove this line
     maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1")
+    maven("https://maven.cleanroommc.com")
+
+    // Uncomment to add a dependency from curse forge
+    /*exclusiveContent {
+        forRepository {
+            maven {
+                url = URI.create("https://cursemaven.com")
+            }
+        }
+        filter {
+            includeGroup("curse.maven")
+        }
+    }*/
 }
 
 val shadowImpl: Configuration by configurations.creating {
@@ -73,11 +87,19 @@ dependencies {
     mappings("de.oceanlabs.mcp:mcp_stable:39-1.12")
     forge("net.minecraftforge:forge:1.12.2-14.23.5.2847") // For some reason it cant find a version newer than 2847
 
-    // If you don't want mixins, remove these lines
-    shadowImpl("org.spongepowered:mixin:0.7.11-SNAPSHOT") {
+    // Remove everything up until DevAuth if you don't want mixins
+    // Common:
+    annotationProcessor("org.ow2.asm:asm-debug-all:5.2")
+    annotationProcessor("com.google.guava:guava:32.1.2-jre")
+    annotationProcessor("com.google.code.gson:gson:2.8.9")
+
+    // ForgeGradle:
+    implementation ("zone.rong:mixinbooter:9.1") {
         isTransitive = false
     }
-    annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT")
+    annotationProcessor ("zone.rong:mixinbooter:9.1") {
+        isTransitive = false
+    }
 
     // If you don't want to log in with your real minecraft account, remove this line
     runtimeOnly("me.djtheredstoner:DevAuth-forge-legacy:1.1.2")
@@ -108,7 +130,7 @@ tasks.processResources {
     inputs.property("modid", modid)
     inputs.property("basePackage", baseGroup)
 
-    filesMatching(listOf("mcmod.info", "mixins.$modid.json")) {
+    filesMatching(listOf("mcmod.info")) {
         expand(inputs.properties)
     }
 
